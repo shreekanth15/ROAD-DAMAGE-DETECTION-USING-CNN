@@ -1,0 +1,157 @@
+import os
+import cv2
+
+data_dir =  "/content/drive/MyDrive/proj_road_data"
+labels = ["normal","potholes"]
+x = []
+y = []
+for label in labels:
+    data = os.path.join(data_dir,label)
+    for image in os.listdir(data):
+        try:
+            im = cv2.imread(os.path.join(data,image),cv2.IMREAD_COLOR)
+            im = cv2.resize(im,(224,224))
+            
+            
+            x.append(im)
+            y.append(labels.index(label))
+            
+            
+        except Exception as e:
+            pass
+            
+import numpy as np
+np.unique(y)
+np.unique(x)
+
+x = np.array(x)/255.0
+y = np.array(y)
+
+x.shape
+y.shape
+
+x = x.reshape(-1, 224, 224, 3)
+x.shape
+y = y.reshape(-1, 1)
+
+from tensorflow.keras.utils import to_categorical
+
+y = to_categorical(y,4,)
+
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+
+datagenerator = ImageDataGenerator(
+fill_mode= 'nearest',
+horizontal_flip=False,
+vertical_flip=False,
+shear_range=0.1,
+zoom_range = 0.1, 
+width_shift_range=0.2,  
+height_shift_range=0.2
+)
+datagenerator.fit(x)
+
+
+from sklearn.model_selection import train_test_split
+x_train,x_test,y_train,y_test = train_test_split(x,y)
+
+
+import tensorflow as tf
+model = tf.keras.Sequential([
+tf.keras.layers.Conv2D(32,(5,5),padding ='same',strides=(2,2),activation='relu',input_shape=(224,224,3)),
+tf.keras.layers.MaxPooling2D((2,2)),
+tf.keras.layers.Conv2D(64,(5,5),padding ='same',strides=(2,2),activation='relu'),
+tf.keras.layers.MaxPooling2D((2,2)),
+tf.keras.layers.Conv2D(128,(5,5),padding ='same',strides=(2,2),activation='relu'),
+tf.keras.layers.MaxPooling2D((2,2)),
+tf.keras.layers.Conv2D(128,(5,5),padding ='same',strides=(2,2),activation='relu'),
+tf.keras.layers.Flatten(),
+tf.keras.layers.Dense(256,activation='relu'),
+tf.keras.layers.Dropout(0.3),
+    
+tf.keras.layers.Dense(4,activation='softmax')
+])
+
+model.compile(optimizer='adam',loss='categorical_crossentropy',metrics=['accuracy'])
+
+
+from tensorflow import keras
+# Import of keras model and hidden layers for CNN
+from keras.models import Sequential
+from keras.layers.convolutional import Conv2D, MaxPooling2D
+from keras.layers import Dense, Flatten, Dropout
+import numpy as np
+import matplotlib.pyplot as plt
+import cv2
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix
+import warnings
+warnings.filterwarnings('always')
+warnings.filterwarnings('ignore')
+import matplotlib.pyplot as plt
+from matplotlib import style
+imagepaths = []
+import os
+for dirname, _, filenames in os.walk('/content/drive/MyDrive/proj_road_data/train'):
+    for filename in filenames:
+        path = os.path.join(dirname, filename)
+        imagepaths.append(path)
+
+print(len(imagepaths))
+
+
+import numpy as np 
+import pandas as pd 
+from tqdm import tqdm
+import warnings
+warnings.filterwarnings('always')
+warnings.filterwarnings('ignore')
+import matplotlib.pyplot as plt
+from matplotlib import style
+import cv2
+import random as rn
+import os
+
+
+def make_train_data(label,DIR):
+    for img in tqdm(os.listdir(DIR)):
+        try:
+            path = os.path.join(DIR,img)
+            img = cv2.imread(path,cv2.IMREAD_COLOR)
+            img = cv2.resize(img, (IMG_SIZE,IMG_SIZE))
+
+            X.append(np.array(img))
+            Z.append(str(label))
+        except:
+            pass
+        
+def assign_label(img,label):
+    return label
+    
+    
+def epoch1():
+  earlystop = tf.keras.callbacks.EarlyStopping(monitor='val_loss',patience=4,restore_best_weights=True)
+  model.fit(datagenerator.flow(x_train,y_train,batch_size=32),epochs=50,callbacks=[earlystop],validation_data=datagenerator.flow(x_test,y_test))
+  
+epoch1()
+
+y_pred=model.predict(x_test)
+
+fig,ax=plt.subplots(2,5)
+plt.subplots_adjust(bottom=0.3, top=0.7, hspace=0)
+fig.set_size_inches(15,15)
+
+for i in range(2):
+    for j in range (5):
+        l=rn.randint(0,len(Z))
+        ax[i,j].imshow(X[l][:,:,::-1])
+        ax[i,j].set_title(Z[l])
+        ax[i,j].set_aspect('equal')
+        
+ from sklearn.metrics import accuracy_score
+print("Testing accuracy:",accuracy_score(y_test.argmax(axis=1),y_pred.argmax(axis=1)))
+
+import pandas as pd
+history = pd.DataFrame(model.history.history)
+history[["loss","val_loss"]].plot()
